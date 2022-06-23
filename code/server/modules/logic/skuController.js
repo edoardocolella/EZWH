@@ -2,8 +2,9 @@
 
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
-const skuDAO = require('../DAOs/skuDAO')
-
+const skuDAO = require('../DAOs/skuDAO');
+const testDescriptorDAO = require('../DAOs/testDescriptorDAO')
+const positionDAO = require('../DAOs/positionDAO')
 class SkuController {
     /** @type {Controller} */
     #controller;
@@ -24,11 +25,8 @@ class SkuController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "customer", "clerk"))
             throw new Exceptions(401);
 
-        /* let rows = await this.#dbManager.genericSqlGet("SELECT * FROM SKU")
-            .catch(error => { throw error }); */
-        
         let rows = await skuDAO.getAllSkus()
-            .catch(e => {throw e});
+            .catch(e => { throw e });
 
         if (!rows) {
 
@@ -51,10 +49,9 @@ class SkuController {
     async getPositionForSKU(id) {
         let positionID = "";
 
-        await this.#dbManager.genericSqlGet(`SELECT * FROM SKU_in_Position WHERE SKUId = ?;`, id)
+        await skuDAO.getPositionForSku(id)
             .then(value => { positionID = (value[0] === undefined ? "" : "" + value[0].positionID) })
             .catch(error => { throw error });
-
 
         return positionID;
 
@@ -66,7 +63,7 @@ class SkuController {
     async getTestDescriptorsForSKU(id) {
 
         let testDescriptors
-        await this.#dbManager.genericSqlGet(`SELECT id FROM TestDescriptor WHERE idSKU = ?;`, id)
+        await testDescriptorDAO.getTestDescriptorsForSKU(id)
             .then(value => { testDescriptors = value === undefined ? undefined : value.map(v => v.id) })
             .catch(error => { throw error });
         return testDescriptors;
@@ -89,10 +86,9 @@ class SkuController {
         if (this.#controller.areUndefined(id) || this.#controller.areNotNumbers(id) || !this.#controller.areAllPositiveOrZero(id))
             throw new Exceptions(422);
 
-        let sku;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM SKU WHERE id=?;`, id)
-            .then(value => sku = value[0])
-            .catch(error => { throw error })
+        let sku = await skuDAO.getSku(id)
+            .catch(error => { throw error });
+
         if (!sku)
             throw new Exceptions(404);
 
@@ -141,12 +137,9 @@ class SkuController {
             throw new Exceptions(422);
         }
 
-
-        const sqlInstruction = `INSERT INTO SKU ( weight, volume, price, notes, description, availableQuantity)
-        VALUES ( ?, ?, ?, ?, ?, ?);`;
-
-        await this.#dbManager.genericSqlRun(sqlInstruction, weight, volume, price, notes, description, availableQuantity)
+        await skuDAO.createSKU(weight, volume, price, notes, description, availableQuantity)
             .catch(() => { throw error });
+
     }
 
 
@@ -191,7 +184,7 @@ class SkuController {
 
         //check if sku has position
         let position;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM SKU_in_Position SP JOIN Position P WHERE SP.positionID=P.positionID AND SP.SKUId = ?`, id)
+        await skuDAO.checkPositionForSku(id)
             .then(value => position = value[0])
             .catch(error => { throw error });
 
@@ -201,19 +194,12 @@ class SkuController {
                 || position.maxVolume < newVolume * newAvailableQuantity)
                 throw new Exceptions(422);
             //update position info
-            const sqlUpdate = `UPDATE Position SET occupiedWeight = ?, 
-                            occupiedVolume = ? WHERE positionID = ?;`;
-
-
-            await this.#dbManager.genericSqlRun(sqlUpdate, newWeight * newAvailableQuantity, newVolume * newAvailableQuantity, position.positionId)
+            await positionDAO.editPosition(newWeight * newAvailableQuantity, newVolume * newAvailableQuantity, position.positionId)
                 .catch(error => { throw error });
         }
-        //update sku info
-        const sqlInstruction = `UPDATE SKU SET weight = ?, volume = ?, price = ? ,
-                                notes = ?, description = ?, 
-                                availableQuantity= ? WHERE ID = ?;`;
 
-        await this.#dbManager.genericSqlRun(sqlInstruction, newWeight, newVolume, newPrice, newNotes, newDescription, newAvailableQuantity, id)
+        //update sku info
+        await skuDAO.editSKU(newWeight, newVolume, newPrice, newNotes, newDescription, newAvailableQuantity, id)
             .catch((error) => { throw error });
     }
 
@@ -244,9 +230,7 @@ class SkuController {
             .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
 
         //search position
-        let position;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM Position WHERE positionID = ?;`, positionId)
-            .then(value => position = value[0])
+        let position = await positionDAO.getPosition(positionId)
             .catch(error => { throw error });
 
         if (!position)
@@ -259,7 +243,7 @@ class SkuController {
 
         //verify if position was already occupied, if position's item is already the given one?
         let positionAlreadyOccupied;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM SKU_in_Position WHERE positionId = ?;`, positionId)
+        await skuDAO.getSkuForPosition(positionId)
             .then(value => positionAlreadyOccupied = value[0])
             .catch(error => { throw error });
         if ((positionAlreadyOccupied !== undefined)) {
@@ -330,7 +314,7 @@ class SkuController {
             || !this.#controller.areAllPositiveOrZero(id))
             throw new Exceptions(422);
 
-        await this.#dbManager.genericSqlRun(`DELETE FROM SKU WHERE id= ?;`, id)
+        await skuDAO.deleteSKU(id)
             .catch((error) => { throw error });
     }
 

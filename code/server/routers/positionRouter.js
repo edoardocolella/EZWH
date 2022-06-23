@@ -38,7 +38,7 @@ router.put('/api/position/:positionID', async (req, res) => {
 
   await controller.getPositionController().editPositionVer1(param, req.body)
     .then(() => { return res.status(200).end(); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+    .catch(error => { console.log(error); return res.status(error.getCode()).send(error.getMessage()); });
 
 });
 

@@ -1,7 +1,6 @@
 # Design Document 
 
 
-Authors: Bianchi Giulia, Colella Edoardo, Colotti Manuel Enrique, Di Benedetto Giovanna
 
 
 | Version number | Change                                                 |

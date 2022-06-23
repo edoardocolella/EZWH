@@ -1,6 +1,7 @@
 'use strict'
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
+const positionDAO = require('../DAOs/positionDAO')
 
 class PositionController {
     /** @type {Controller} */
@@ -28,8 +29,7 @@ class PositionController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "clerk"))
             throw new Exceptions(401)
 
-        const sqlInstruction = 'SELECT * FROM Position'
-        let rows = await this.#dbManager.genericSqlGet(sqlInstruction)
+        let rows = await positionDAO.getPositions()
             .catch(error => { throw error })
         return rows;
     }
@@ -60,18 +60,18 @@ class PositionController {
             this.#controller.areNotNumbers(maxWeight, maxVolume, occupiedWeight, occupiedVolume, positionID, aisleID, row, col)
             || !this.#controller.areAllPositiveOrZero(maxWeight, maxVolume, positionID, aisleID, row, col)
             || occupiedVolume < 0 || occupiedWeight < 0
-           || String(positionID).length !== 12 || String(aisleID).length !== 4
+            || String(positionID).length !== 12 || String(aisleID).length !== 4
             || String(row).length !== 4 || String(col).length !== 4
             || !this.checkPositionID(positionID, aisleID, row, col))
             throw new Exceptions(422);
 
         let exists = await this.positionExists(positionID)
-            .catch(error => {throw error})
-        
-        if(exists.length){
+            .catch(error => { throw error })
+
+        if (exists.length) {
             throw new Exceptions(422);
         }
-        
+
 
         const sqlInstruction = `INSERT INTO Position (positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume) VALUES (?,?,?,?,?,?,?,?);`;
 
@@ -102,32 +102,32 @@ class PositionController {
         if (this.#controller.areUndefined(id, newAisleID, newRow, newCol, newMaxWeight, newMaxVolume, newOccupiedWeight, newOccupiedVolume) ||
             this.#controller.areNotNumbers(newMaxWeight, newMaxVolume, newOccupiedWeight, newOccupiedVolume)
             || !this.#controller.areAllPositiveOrZero(newMaxWeight, newMaxVolume)
-            || newOccupiedVolume < 0 || newOccupiedWeight <0
+            || newOccupiedVolume < 0 || newOccupiedWeight < 0
             || String(id).length !== 12 || String(newAisleID).length !== 4
-            || String(newRow).length !== 4 || String(newCol).length !== 4){
+            || String(newRow).length !== 4 || String(newCol).length !== 4) {
 
-                throw new Exceptions(422);
-            }
+            throw new Exceptions(422);
+        }
 
-        
+
         //checks if new generated positionID will match another one already existing
         const newPositionID = newAisleID + "" + newRow + "" + newCol;
 
-            
+
         let positions = await this.getAllPositions()
             .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
 
         const positionIDs = positions.map(pos => String(pos.positionID));
 
-        if (!positionIDs.includes(id)){
+        if (!positionIDs.includes(id)) {
             throw new Exceptions(404);
         }
-            
+
 
         await this.deletePosition(id)
             .catch(error => { throw error });
 
-        
+
 
         let newBody =
         {
@@ -165,7 +165,7 @@ class PositionController {
 
 
         let positions = await this.getAllPositions()
-            .catch((error) => { if(error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
 
         const positionIDs = positions.map(pos => String(pos.positionID))
         if (!positionIDs.includes(oldId))
@@ -209,12 +209,10 @@ class PositionController {
 
 
 
-    async positionExists(positionID){
-        const query = "SELECT * FROM Position WHERE positionID = ?";
-        let position;
+    async positionExists(positionID) {
 
-        await this.#dbManager.genericSqlGet(query, positionID)
-                             .then(value => position = value[0]);
+        let position = await positionDAO.getPosition(positionID)
+            .catch(error => { throw error });
 
         return new Promise((resolve) => {
             position !== undefined ? resolve(true) : resolve(false)

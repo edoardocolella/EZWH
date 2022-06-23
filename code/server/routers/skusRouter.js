@@ -76,7 +76,7 @@ router.delete('/api/skus/:id', async (req, res) => {
 
   await controller.getSkuController().deleteSku(param)
   .then(() => { res.status(204).end(); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+    .catch(error => {console.log(error); return res.status(error.getCode()).send(error.getMessage()); });
 
 
 });

@@ -38,7 +38,7 @@ router.get('/api/skuitems/:rfid', async (req, res) => {
   const controller = req.app.get("controller");
   await controller.getSkuItemController().getSkuItem(param)
     .then(skuitem => { return res.status(200).json(skuitem); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+    .catch(error => {console.log(error); return res.status(error.getCode()).send(error.getMessage()); });
 });
 
 //POST /api/skuitem

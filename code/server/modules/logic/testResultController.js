@@ -1,6 +1,7 @@
 'use strict'
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
+const testResultDAO = require('../DAOs/testResultDAO')
 
 class TestResultController {
     /** @type {Controller} */
@@ -11,7 +12,7 @@ class TestResultController {
         this.#controller = controller;
         this.#dbManager = this.#controller.getDBManager();
 
-    
+
     }
 
     /** getter function to retreive all test results related to an SKUItem, given its RFID - more than a single test
@@ -31,8 +32,9 @@ class TestResultController {
         await this.#controller.getSkuItemController().getSkuItem(rfid)
             .catch(error => { throw error });
 
-        let tests = await this.#dbManager.genericSqlGet(`SELECT * FROM TestResult WHERE RFID= ?;`, rfid)
+        let tests = await testResultDAO.getTestResults(rfid)
             .catch(error => { throw error });
+
         return tests;
     }
 
@@ -56,12 +58,13 @@ class TestResultController {
         await this.#controller.getSkuItemController().getSkuItem(rfid)
             .catch(error => { throw error });
 
-        let test = await this.#dbManager.genericSqlGet(`SELECT * FROM TestResult WHERE rfid= ? AND ID= ?;`, rfid, id)
+        let test = await testResultDAO.getTestResult(rfid, id)
             .catch(error => { throw error });
-        if (!(test[0]))
+
+        if (!test)
             throw new Exceptions(404)
 
-        return test[0];
+        return test
     }
 
     /**creation of a new test result
@@ -101,9 +104,9 @@ class TestResultController {
         await this.#controller.getTestDescriptorController().getTestDescriptor(idTestDescriptor)
             .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
 
-        const sqlInstruction = `INSERT INTO TestResult ( idTestDescriptor, RFID, date, result)  VALUES ( ?, ?, ?, ?);`;
-        await this.#dbManager.genericSqlRun(sqlInstruction, idTestDescriptor, rfid, dateToSave, result)
+        await testResultDAO.createTestResult(idTestDescriptor, rfid, dateToSave, result)
             .catch(error => { throw error });
+
 
     }
 
@@ -145,11 +148,11 @@ class TestResultController {
 
         //check if testresult exists
         await this.getTestResult(rfid, id)
-            .catch((error) => {if (error.getCode() === 500) throw new Exceptions(503); else throw error });
-        
-        const sqlInstruction = `UPDATE TestResult SET idtestDescriptor= ?, date= ?, result=? WHERE ID= ? AND RFID = ?;`
-        await this.#dbManager.genericSqlRun(sqlInstruction, newIdTestDescriptor, dateToSave, newResult, id, rfid)
+            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+
+        await testResultDAO.editTestResult(newIdTestDescriptor, dateToSave, newResult, id, rfid)
             .catch(error => { throw error });
+
     }
 
 
@@ -169,8 +172,7 @@ class TestResultController {
             || !this.#controller.areAllPositiveOrZero(id, rfid))
             throw new Exceptions(422);
 
-        await this.#dbManager.genericSqlRun
-            (`DELETE FROM TestResult WHERE ID= ? AND RFID= ?;`, id, rfid)
+        await testResultDAO.deleteTestResult(id, rfid)
             .catch((error) => { throw new Exceptions(503) });
 
 

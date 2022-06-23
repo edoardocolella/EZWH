@@ -1,7 +1,7 @@
 'use strict'
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
-
+const skuItemDAO = require('../DAOs/skuItemDAO')
 class SkuItemController {
     /** @type {Controller} */
     #controller;
@@ -21,7 +21,7 @@ class SkuItemController {
         if (!this.#controller.isLoggedAndHasPermission("manager"))
             throw new Exceptions(401);
 
-        let skuitems = await this.#dbManager.genericSqlGet("SELECT * FROM SKUItem")
+        let skuitems = await skuItemDAO.getAllSkuItems()
             .catch(error => { throw error });
         return skuitems;
     }
@@ -50,7 +50,7 @@ class SkuItemController {
         await this.#controller.getSkuController().getSku(id)
             .catch((error) => { throw error });
 
-        let skuitems = await this.#dbManager.genericSqlGet(`SELECT * FROM SKUItem WHERE SKUId= ? AND available = 1;`, id)
+        let skuitems = await skuItemDAO.getSkuItems(id)
             .catch(error => { throw error });
         if (!skuitems)
             throw new Exceptions(404)
@@ -75,12 +75,13 @@ class SkuItemController {
         if (this.#controller.checkRFID(rfid))
             throw new Exceptions(422);
 
-        let row = await this.#dbManager.genericSqlGet(`SELECT * FROM SKUItem WHERE RFID= ?;`, rfid)
+        let row = await skuItemDAO.getSkuItem(rfid)
             .catch(error => { throw error });
-        if (!(row[0]))
+
+        if (!row)
             throw new Exceptions(404)
 
-        return row[0];
+        return row;
     }
 
     /**creation of an SKUItem.
@@ -116,9 +117,7 @@ class SkuItemController {
         await this.#controller.getSkuController().getSku(SKUId)
             .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
 
-        const sqlInstruction = `INSERT INTO SKUItem (RFID, SKUId, Available, DateOfStock) VALUES (?,?,?,?);`;
-
-        await this.#dbManager.genericSqlRun(sqlInstruction, RFID, SKUId, 0, formattedDate)
+        await skuItemDAO.createSkuItem(RFID, SKUId, 0, formattedDate)
             .catch((error) => { throw error });
 
     }
@@ -145,7 +144,6 @@ class SkuItemController {
             || isNaN(Number(newAvailable)) || Number(newAvailable) < 0)
             throw new Exceptions(422);
 
-
         let formattedDate
         try {
             formattedDate = this.#controller.checkAndFormatDate(newDateOfStock)
@@ -157,10 +155,9 @@ class SkuItemController {
         await this.getSkuItem(oldRFID)
             .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
 
-        const sqlUpdate = `UPDATE SKUItem SET RFID= ?, Available= ?,DateOfStock= ? WHERE RFID= ?;`;
-
-        await this.#dbManager.genericSqlRun(sqlUpdate, newRFID, newAvailable, formattedDate, oldRFID)
+        await skuItemDAO.editSkuItem(newRFID, newAvailable, formattedDate, oldRFID)
             .catch(error => { throw error });
+
     }
 
     /** delete function to remove an SKUItem from the table, given its ID.
@@ -178,9 +175,8 @@ class SkuItemController {
         if (this.#controller.checkRFID(rfid))
             throw new Exceptions(422);
 
-        await this.#dbManager.genericSqlRun(`DELETE FROM SKUItem WHERE RFID= ?;`, rfid)
+        await skuItemDAO.deleteSkuItem(rfid)
             .catch((error) => { throw error });
-
     }
 }
 

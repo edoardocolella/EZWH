@@ -1,16 +1,13 @@
 'use strict'
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
-
+const testDescriptorDAO = require('../DAOs/testDescriptorDAO')
 class TestDescriptorController {
     /** @type {Controller} */
 
     #controller;
-    #dbManager;
     constructor(controller) {
         this.#controller = controller;
-        this.#dbManager = this.#controller.getDBManager();
-
     }
 
     /**getter function to retreive all test descriptors
@@ -22,8 +19,9 @@ class TestDescriptorController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "qualityEmployee"))
             throw new Exceptions(401);
 
-        let tests = await this.#dbManager.genericSqlGet("SELECT * FROM TestDescriptor;")
+        let tests = await testDescriptorDAO.getAllTestDescriptors()
             .catch(error => { throw error });
+
         return tests;
     }
 
@@ -38,17 +36,19 @@ class TestDescriptorController {
         if (!this.#controller.isLoggedAndHasPermission("manager"))
             throw new Exceptions(401)
 
-        if (this.#controller.areUndefined(id) 
-        || this.#controller.areNotNumbers(id)
-        || !this.#controller.areAllPositiveOrZero(id))
+        if (this.#controller.areUndefined(id)
+            || this.#controller.areNotNumbers(id)
+            || !this.#controller.areAllPositiveOrZero(id))
             throw new Exceptions(422);
 
-        let row = await this.#dbManager.genericSqlGet(`SELECT * FROM TestDescriptor WHERE ID= ?;`, id)
+        let row = await testDescriptorDAO.getTestDescriptor(id)
             .catch(error => { throw error });
-        if (!(row[0]))
+
+
+        if (!row)
             throw new Exceptions(404)
 
-        return row[0];
+        return row;
     }
 
     /**creation of a new test descriptor 
@@ -73,12 +73,10 @@ class TestDescriptorController {
 
         //check if sku exists
         await this.#controller.getSkuController().getSku(idSKU)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); throw error });
+            .catch((error) => { console.log("hereError", error); if (error.getCode() === 500) throw new Exceptions(503); throw error });
 
-        const sqlInsert = `INSERT INTO TestDescriptor ( name, procedureDescription, idSKU) VALUES ( ?, ?, ?);`
-
-        await this.#dbManager.genericSqlRun(sqlInsert, name, procedureDescription, idSKU)
-            .catch((error) => { throw error })
+         await testDescriptorDAO.createTestDescriptor(name, procedureDescription, idSKU)
+             .catch((error) => { throw error })
 
     }
 
@@ -110,11 +108,8 @@ class TestDescriptorController {
         await this.getTestDescriptor(id)
             .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
 
-        const sqlUpdate = `UPDATE TestDescriptor SET name= ?, procedureDescription= ?, idSku = ? WHERE ID= ?;`;
-
-        await this.#dbManager.genericSqlRun(sqlUpdate, newName, newProcedureDescription, newIdSKU, id)
-            .catch((error) => { throw error });
-
+        await testDescriptorDAO.updateTestDescriptor(newName, newProcedureDescription, newIdSKU, id)
+            .catch((error) => { throw error })
     }
 
 
@@ -128,14 +123,13 @@ class TestDescriptorController {
         if (!this.#controller.isLoggedAndHasPermission("manager"))
             throw new Exceptions(401);
 
-        if (this.#controller.areUndefined(id) 
-        || this.#controller.areNotNumbers(id)
-        || !this.#controller.areAllPositiveOrZero(id))
+        if (this.#controller.areUndefined(id)
+            || this.#controller.areNotNumbers(id)
+            || !this.#controller.areAllPositiveOrZero(id))
             throw new Exceptions(422);
 
-        await this.#dbManager.genericSqlRun
-            (`DELETE FROM TestDescriptor WHERE ID= ?;`, id)
-            .catch((error) => { throw error });
+        await testDescriptorDAO.deleteTestDescriptor(id)
+            .catch((error) => { throw error })
     }
 }
 

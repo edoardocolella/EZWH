@@ -2,14 +2,13 @@
 
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller');
+const itemDao = require('../DAOs/itemDAO');
 
 class ItemController {
     /** @type {Controller} */
     #controller;
-    #dbManager;
     constructor(controller) {
         this.#controller = controller;
-        this.#dbManager = this.#controller.getDBManager();
     }
 
 
@@ -23,7 +22,7 @@ class ItemController {
         if (!this.#controller.isLoggedAndHasPermission("supplier"))
             throw new Exceptions(401);
 
-        let rows = await this.#dbManager.genericSqlGet("SELECT * FROM Item")
+        let rows = await itemDao.getAllItems()
             .catch(error => { throw error });
         return rows;
 
@@ -47,10 +46,10 @@ class ItemController {
         if (this.#controller.areUndefined(id, supplierId) || this.#controller.areNotNumbers(id, supplierId)
             || !this.#controller.areAllPositiveOrZero(id)) {
             throw new Exceptions(422);
-            
+
         }
-        
-        
+
+
         const suppliers = await this.#controller.getUserController().getAllSuppliers()
             .catch(err => { throw err })
 
@@ -58,22 +57,18 @@ class ItemController {
         const suppliersCode = suppliers.map(s => s.id);
 
         let supplierFound = false;
-        for(let supCode of suppliersCode){
-            if(Number(supCode) === Number(supplierId)){
+        for (let supCode of suppliersCode) {
+            if (Number(supCode) === Number(supplierId)) {
                 supplierFound = true;
             }
         }
 
-        if(!supplierFound){
+        if (!supplierFound) {
             throw new Exceptions(404)
         }
 
-
-        let row;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM Item WHERE id= ? AND supplierId = ?;`, id, supplierId)
-            .then(value => row = value[0])
+        let row = await itemDao.getItem(id, supplierId)
             .catch(error => { throw error });
-
 
         //check if the item exists
         if (!row)
@@ -110,32 +105,24 @@ class ItemController {
 
         //check if sku exists in the SKU table
         await this.#controller.getSkuController().getSku(SKUId)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error } )
+            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
 
         //check if the supplier already sells an item with the same SKUId
-        let item;
-        await this.#dbManager.genericSqlGet('SELECT * FROM Item WHERE SKUid = ? AND supplierId = ?', SKUId, supplierId)
-            .then(value => item = value[0])
+
+        let item = await itemDao.getItemFromSkuId(SKUId, supplierId)
             .catch(error => { throw error });
         if (item !== undefined) {
             throw new Exceptions(422);
         }
 
-
-        await this.#dbManager.genericSqlGet('SELECT * FROM Item WHERE id=?', id)
-            .then(value => item = value[0])
+        item = await itemDao.getItem(id)
             .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
         if (item !== undefined) {
             throw new Exceptions(422);
         }
 
-
-
-
-        await this.#dbManager.genericSqlRun(`INSERT INTO Item (id, description, price, SKUId, supplierId) 
-        VALUES (?,?,?,?,?);`, id, description, price, SKUId, supplierId)
+        await itemDao.createItem(id, description, price, SKUId, supplierId)
             .catch(error => { throw error });
-
 
     }
 
@@ -161,7 +148,7 @@ class ItemController {
             throw new Exceptions(422);
 
         await this.getItem(id, supplierId)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else  throw error} )
+            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
 
         const suppliers = await this.#controller.getUserController().getAllSuppliers()
             .catch(err => { throw err })
@@ -170,17 +157,17 @@ class ItemController {
 
         let supplierFound = false;
 
-        for(let supCode of suppliersCode){
-            if(Number(supCode) === Number(supplierId)){
+        for (let supCode of suppliersCode) {
+            if (Number(supCode) === Number(supplierId)) {
                 supplierFound = true;
             }
         }
 
-        if(!supplierFound){
+        if (!supplierFound) {
             throw new Exceptions(404)
         }
 
-        await this.#dbManager.genericSqlRun(`UPDATE Item SET description= ? , price= ? WHERE id= ? AND supplierId = ?;`, newDescription, newPrice, id, supplierId)
+        await itemDao.updateItem(newDescription, newPrice, id, supplierId)
             .catch(error => { throw error });
 
     }
@@ -209,7 +196,9 @@ class ItemController {
         if (!suppliersCode.includes(Number(supplierId))) {
             throw new Exceptions(404)
         }
-        await this.#dbManager.genericSqlRun(`DELETE FROM Item WHERE id = ? AND supplierId = ?;`, id, supplierId)
+
+
+        await itemDao.deleteItem(id, supplierId)
             .catch((error) => { throw error });
     }
 

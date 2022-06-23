@@ -2,6 +2,7 @@
 
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
+const skuDAO = require('../DAOs/skuDAO')
 
 class SkuController {
     /** @type {Controller} */
@@ -23,8 +24,11 @@ class SkuController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "customer", "clerk"))
             throw new Exceptions(401);
 
-        let rows = await this.#dbManager.genericSqlGet("SELECT * FROM SKU")
-            .catch(error => { throw error });
+        /* let rows = await this.#dbManager.genericSqlGet("SELECT * FROM SKU")
+            .catch(error => { throw error }); */
+        
+        let rows = await skuDAO.getAllSkus()
+            .catch(e => {throw e});
 
         if (!rows) {
 

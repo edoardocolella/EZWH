@@ -40,3 +40,31 @@ exports.editPosition = (occupiedWeight, occupiedVolume, positionId) => {
         })
     })
 }
+
+exports.insertPosition = (positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume) => {
+    return new Promise((resolve, reject) => {
+        const sql = `INSERT INTO Position (positionID, maxVolume, maxWeight, aisleID, row, col, 
+            occupiedWeight, occupiedVolume) VALUES (?,?,?,?,?,?,?,?);`;
+        db.run(sql, [positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume], (err) => {
+            if (err) {
+                console.log("Database run error: err", err);
+                reject(new Exceptions(500));
+            }
+            else resolve(true);
+        })
+    })
+}
+
+exports.deletePosition = (id) => {
+    return new Promise((resolve, reject) => {
+        const sql = `DELETE FROM Position WHERE positionID = ?;`;
+        db.run(sql, [id], (err) => {
+            if (err) {
+                console.log("Database run error: err", err);
+                reject(new Exceptions(500));
+            }
+            else resolve(true);
+        })
+    })
+}
+

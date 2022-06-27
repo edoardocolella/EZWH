@@ -72,10 +72,7 @@ class PositionController {
             throw new Exceptions(422);
         }
 
-
-        const sqlInstruction = `INSERT INTO Position (positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume) VALUES (?,?,?,?,?,?,?,?);`;
-
-        await this.#dbManager.genericSqlRun(sqlInstruction, positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume)
+        await positionDAO.insertPosition(positionID, maxVolume, maxWeight, aisleID, row, col, occupiedWeight, occupiedVolume)
             .catch(error => { throw error });
     }
 
@@ -201,9 +198,8 @@ class PositionController {
         if (this.#controller.areUndefined(id) || String(id).length !== 12)
             throw new Exceptions(422);
 
-        await this.#dbManager.genericSqlRun
-            (`DELETE FROM Position WHERE positionID = ?;`, id)
-            .catch((error) => { throw new Exceptions(503) });
+        await positionDAO.deletePosition(id)
+            .catch(() => {throw new Exceptions(503)})
 
     }
 

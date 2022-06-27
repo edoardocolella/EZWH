@@ -2,7 +2,7 @@
 
 const Exceptions = require('../../routers/exceptions');
 const Controller = require('./controller')
-
+const restockOrderDAO = require('../DAOs/restockOrderDAO')
 
 class RestockOrderController {
     /** @type {Controller} */
@@ -22,7 +22,8 @@ class RestockOrderController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "clerk", "qualityEmployee"))
             throw new Exceptions(401)
 
-        let orders = await this.#dbManager.genericSqlGet("SELECT * FROM RestockOrder;").catch((error) => { throw error });
+        let orders = await restockOrderDAO.getAllRestockOrders().catch((error) => { throw error });
+
 
         for (let i = 0; i < orders.length; i++) {
             if (orders[i].state !== 'ISSUED' && orders[i].state !== 'DELIVERY') {
@@ -71,7 +72,7 @@ class RestockOrderController {
         if (!this.#controller.isLoggedAndHasPermission("manager", "supplier"))
             throw new Exceptions(401)
 
-        let rows = await this.#dbManager.genericSqlGet("SELECT * FROM RestockOrder WHERE state = 'ISSUED';")
+        let rows = await restockOrderDAO.getIssuedRestockOrders()
             .catch((error) => { throw error });
 
         for (let i = 0; i < rows.length; i++) {
@@ -99,13 +100,11 @@ class RestockOrderController {
             throw new Exceptions(401)
 
         /*check if the id is valid*/
-        if (!id || isNaN(Number(id))
-            || !this.#controller.areAllPositiveOrZero(id))
+        if (!id || isNaN(Number(id)) || !this.#controller.areAllPositiveOrZero(id)) {
             throw new Exceptions(422);
-
-        let row;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM RestockOrder WHERE id=?;`, id)
-            .then(value => row = value[0])
+        }
+  
+        let row = await restockOrderDAO.getRestockOrder(id)
             .catch((error) => { throw error });
 
         /*check if the restock order exists*/
@@ -143,10 +142,7 @@ class RestockOrderController {
         if (!this.#controller.isLoggedAndHasPermission("manager"))
             throw new Exceptions(401)
 
-        let row;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM RestockOrder WHERE id=?;`, id)
-            .then(value => row = value[0])
-            .catch((error) => { throw error });
+        let row = await this.getRestockOrder(id).catch((error) => { throw error });
 
         /*check if the restock order exists*/
         if (!row)
@@ -161,7 +157,7 @@ class RestockOrderController {
         if (row.state !== 'COMPLETEDRETURN')
             throw new Exceptions(422)
 
-        let failedProducts = await this.#dbManager.genericSqlGet('SELECT Distinct RFID FROM TestResult WHERE Result = false')
+        let failedProducts = await restockOrderDAO.getFailedProducts()
             .catch(error => { throw error })
 
         let failedProductsToReturn = []
@@ -206,30 +202,21 @@ class RestockOrderController {
             throw new Exceptions(422);
         }
 
-        let id;
-        await this.#dbManager.genericSqlGet('SELECT COUNT(*) FROM RestockOrder')
-            .then(value => id = value[0]["COUNT(*)"] + 1)
+        let id = await restockOrderDAO.getCountRestock()
             .catch((error) => { throw error });
 
-        const sqlInstruction = `INSERT INTO RestockOrder ( id, issueDate, state, transportNote, supplierId) 
-        VALUES (?, ?, "ISSUED", '', ?);`;
-
-        await this.#dbManager.genericSqlRun(sqlInstruction, id, dateToSave, supplierId)
+        await restockOrderDAO.insertRestock(id, dateToSave, supplierId)
             .catch((error) => { throw error });
 
-        // const sqlInsert = `INSERT INTO SKUPerRestockOrder (id, SKUid, description, price, qty) VALUES (?,?,?,?,?);`
-        // for (let i = 0; i < products.length; i++) {
-        //     await this.#dbManager.genericSqlRun(sqlInsert, id + 1, products[i].SKUId, products[i].description, products[i].price, products[i].qty)
-        //         .catch((error) => { throw error })
-        // }
 
-        
         const sqlInsert = `INSERT INTO SKUPerRestockOrder (id, SKUid, itemId, description, price, qty) VALUES (?,?,?,?,?,?);`
         for (let i = 0; i < products.length; i++) {
-            await this.#dbManager.genericSqlRun(sqlInsert, id + 1, products[i].SKUId, products[i].itemId, products[i].description, products[i].price, products[i].qty)
+   
+            await restockOrderDAO.insertSkuPerRestock(id + 1, products[i].SKUId, products[i].itemId,
+                products[i].description, products[i].price, products[i].qty)
                 .catch((error) => { throw error })
-        } 
-        
+        }
+
 
     }
 
@@ -251,10 +238,11 @@ class RestockOrderController {
         if (!newState || !this.#controller.checkStateRestockOrders(newState))
             throw new Exceptions(422);
 
-        let row = await this.#dbManager.genericSqlGet(`SELECT * FROM RestockOrder WHERE id=?;`, id)
+        let row = await restockOrderDAO.getRestockOrder(id)
             .catch((error) => { throw error });
+
         /*check if the restock order exists*/
-        if (!(row[0]))
+        if (!row)
             throw new Exceptions(404);
 
         await this.#dbManager.genericSqlRun(`UPDATE RestockOrder SET state = ? WHERE id=?;`, newState, id)
@@ -279,28 +267,28 @@ class RestockOrderController {
 
 
         /*check if the body is valid*/
-        if (!skuItems){
+        if (!skuItems) {
             throw new Exceptions(422);
         }
 
-        let row;
-        await this.#dbManager.genericSqlGet(`SELECT * FROM RestockOrder WHERE id=?;`, id)
-            .then(value => row = value[0])
+        let row = await restockOrderDAO.getRestockOrder(id)
             .catch((error) => { throw error });
 
-        if(row === undefined){
+
+
+        if (row === undefined) {
             throw new Exceptions(404);
         }
         const supplierId = row.supplierId;
 
-    
+
         /*check if the restock order exists*/
-        if (!row){
+        if (!row) {
             throw new Exceptions(404);
         }
 
         /*check if the state of the restock order is DELIVERED*/
-        if (row.state !== 'DELIVERED'){
+        if (row.state !== 'DELIVERED') {
             throw new Exceptions(422)
         }
 
@@ -311,15 +299,15 @@ class RestockOrderController {
         const sqlInsert = `INSERT INTO SKUItemsPerRestockOrder (id, SKUID, itemId, RFID) VALUES (?,?,?,?);`
         const sqlInsert2 = `INSERT INTO SKUPerRestockOrder (id, SKUid, itemId, description, price, qty) VALUES (?,?,?,?,?,?);`
         const sqlUpdate = `UPDATE SKUPerRestockOrder SET qty = qty + 1 WHERE SKUid = ?`
-        
-  
+
+
         for (let i = 0; i < skuItems.length; i++) {
             let count;
 
             //Checking for already existent RFID  (other way to solve is to remove the check since it's not requested)
             await this.#dbManager.genericSqlGet(sqlGet, skuItems[i].rfid).then((result) => count = result[0]["COUNT(*)"])
-                                                                         .catch((err) => {throw new Exceptions(503)});                                                            
-            if(count > 0){
+                .catch((err) => { throw new Exceptions(503) });
+            if (count > 0) {
                 continue;
             }
 
@@ -331,7 +319,7 @@ class RestockOrderController {
             itemIdInfo = await this.#controller.getItemController().getItem(skuItems[i].itemId, supplierId);
 
             num = await this.#dbManager.genericSqlGet("SELECT SKUId FROM SKUPerRestockOrder WHERE SKUId = ?", skuidInfo.id).catch(error => { throw new Exceptions(503) });
-                
+
             if (num.length === 0) {
                 await this.#dbManager.genericSqlRun(sqlInsert2, id, skuidInfo.id, itemIdInfo, skuidInfo.description, skuidInfo.price, 1).catch((error) => { throw new Exceptions(503) })
             }
@@ -352,55 +340,55 @@ class RestockOrderController {
     */
     async addTransportNote(id, body) {
 
-    /*check if the current user is authorized*/
-    if (!this.#controller.isLoggedAndHasPermission("manager", "supplier"))
-        throw new Exceptions(401)
+        /*check if the current user is authorized*/
+        if (!this.#controller.isLoggedAndHasPermission("manager", "supplier"))
+            throw new Exceptions(401)
 
         /*check if the body is valid */
 
         const transportNote = body["transportNote"];
 
-        if (!transportNote){
+        if (!transportNote) {
             throw new Exceptions(422);
         }
-            
-    /*check if the id is valid*/
-    if (!id || isNaN(Number(id))
-        || !this.#controller.areAllPositiveOrZero(id))
-        throw new Exceptions(422);
 
-    let row;
-    await this.#dbManager.genericSqlGet(`SELECT * FROM RestockOrder WHERE id=?;`, id)
-        .then(value => row = value[0]).catch((error) => { throw error });
+        /*check if the id is valid*/
+        if (!id || isNaN(Number(id))
+            || !this.#controller.areAllPositiveOrZero(id))
+            throw new Exceptions(422);
 
-    /*check if the restock order exists*/
-    if (!row)
-        throw new Exceptions(404)
+        let row = await restockOrderDAO.getRestockOrder(id)
+            .catch((error) => { throw error });
 
-    /*check if the state of the restock order is DELIVERY*/
-    if (row.state !== 'DELIVERY') {
-        throw new Exceptions(422)
+
+        /*check if the restock order exists*/
+        if (!row)
+            throw new Exceptions(404)
+
+        /*check if the state of the restock order is DELIVERY*/
+        if (row.state !== 'DELIVERY') {
+            throw new Exceptions(422)
+        }
+
+
+        let formattedDeliveryDate, formattedIssueDate;
+        try {
+            formattedDeliveryDate = this.#controller.checkAndFormatDate(transportNote.deliveryDate);
+            formattedIssueDate = this.#controller.checkAndFormatDate(row.issueDate);
+
+        } catch (error) {
+            throw error;
+        }
+
+        /*check if the deliveryDate is before the issueDate */
+        if (formattedDeliveryDate <= formattedIssueDate) {
+            throw new Exceptions(422);
+        }
+
+
+        const sqlInstruction = `UPDATE RestockOrder SET transportNote = ? WHERE id = ?;`;
+        await this.#dbManager.genericSqlRun(sqlInstruction, transportNote.deliveryDate, id).catch((error) => { throw error })
     }
-
-
-    let formattedDeliveryDate, formattedIssueDate;
-    try {
-        formattedDeliveryDate = this.#controller.checkAndFormatDate(transportNote.deliveryDate);
-        formattedIssueDate = this.#controller.checkAndFormatDate(row.issueDate);
-
-    } catch (error) {
-        throw error;
-    }
-
-    /*check if the deliveryDate is before the issueDate */
-    if (formattedDeliveryDate <= formattedIssueDate) {
-        throw new Exceptions(422);
-    }
-
-
-    const sqlInstruction = `UPDATE RestockOrder SET transportNote = ? WHERE id = ?;`;
-    await this.#dbManager.genericSqlRun(sqlInstruction, transportNote.deliveryDate, id).catch((error) => { throw error })
-}
 
     /**delete function to remove a restock order from the table, given its ID
     * @throws 401 Unauthorized (not logged in or wrong permissions)
@@ -409,18 +397,18 @@ class RestockOrderController {
     */
     async deleteRestockOrder(id) {
 
-    /*check if the current user is authorized*/
-    if (!this.#controller.isLoggedAndHasPermission("manager"))
-        throw new Exceptions(401)
+        /*check if the current user is authorized*/
+        if (!this.#controller.isLoggedAndHasPermission("manager"))
+            throw new Exceptions(401)
 
-    /*check if the id is valid*/
-    if (!id || isNaN(Number(id))
-        || !this.#controller.areAllPositiveOrZero(id))
-        throw new Exceptions(422);
+        /*check if the id is valid*/
+        if (!id || isNaN(Number(id))
+            || !this.#controller.areAllPositiveOrZero(id))
+            throw new Exceptions(422);
 
-    await this.#dbManager.genericSqlRun(`DELETE FROM RestockOrder WHERE ID=?;`, id).catch((error) => { throw error });
-
-}
+        await restockOrderDAO.deleteRestockOrder(id)
+            .catch((error) => { throw error });
+    }
 }
 
 module.exports = RestockOrderController;

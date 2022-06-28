@@ -35,13 +35,9 @@ class Controller {
         this.#dbManager = new DBManager();
 
         (async () => {
-             try {
-                await this.#dbManager.deleteAllData();
-            } catch (error) {
-            
-            }
-        }
-        )() 
+            await this.#dbManager.deleteAllData()
+                .catch(err => { throw err })
+        })()
 
         this.#itemController = new ItemController(this);
         this.#userController = new UserController(this);
@@ -53,7 +49,7 @@ class Controller {
         this.#restockOrderController = new RestockOrderController(this);
         this.#returnOrderController = new ReturnOrderController(this);
         this.#internalOrderController = new InternalOrderController(this);
-        console.log("general Controller started"); 
+        console.log("general Controller started");
 
     }
 
@@ -125,21 +121,23 @@ class Controller {
         return value;
     }
 
-    areEmptyStings(...params){
-        for(let i=0; i<params.length; i++){
-            if(String(params[i]).length===0)
+    areEmptyStings(...params) {
+        for (let i = 0; i < params.length; i++) {
+            if (String(params[i]).length === 0)
                 return true;
         }
         return false;
     }
 
     areNotInt(...params) {
-        for(let i=0; i<params.length; i++){
-            if( params[i] % 1 !== 0)
+        for (let i = 0; i < params.length; i++) {
+            /* if (params[i] % 1 !== 0)
+                return true; */
+            if (!Number.isInteger(params[i]))
                 return true;
         }
         return false;
-     }
+    }
 
     areNotNumbers(...params) {
         const value = params.some((num) => isNaN(Number(num)));
@@ -147,7 +145,7 @@ class Controller {
     }
 
     checkRFID(rfid) {
-        return (!rfid || isNaN(Number(rfid)) || rfid.length !== 32)
+        return (!rfid || isNaN(Number(rfid)) || !Number.isInteger(Number(rfid)) || rfid.length !== 32)
     }
 
     areAllPositiveOrZero(...numbers) {
@@ -190,14 +188,14 @@ class Controller {
     }
 
 
-    validateEmail(email){
+    validateEmail(email) {
         return String(email)
-          .toLowerCase()
-          .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-          );
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
     };
-    
+
 }
 
 module.exports = Controller;

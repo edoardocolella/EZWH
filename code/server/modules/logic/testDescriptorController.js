@@ -73,7 +73,7 @@ class TestDescriptorController {
 
         //check if sku exists
         await this.#controller.getSkuController().getSku(idSKU)
-            .catch((error) => { console.log("hereError", error); if (error.getCode() === 500) throw new Exceptions(503); throw error });
+            .catch((error) => { console.log("hereError", error); if (error.code === 500) throw new Exceptions(503); throw error });
 
          await testDescriptorDAO.createTestDescriptor(name, procedureDescription, idSKU)
              .catch((error) => { throw error })
@@ -102,11 +102,11 @@ class TestDescriptorController {
 
         //check if sku exists
         await this.#controller.getSkuController().getSku(newIdSKU)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         //check if testdescriptor exists
         await this.getTestDescriptor(id)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         await testDescriptorDAO.updateTestDescriptor(newName, newProcedureDescription, newIdSKU, id)
             .catch((error) => { throw error })

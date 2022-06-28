@@ -2,7 +2,8 @@
 class Exceptions {
     code;
     message;
-    constructor(codeNumber) {
+    constructor(codeNumber, customMessage = null) {
+
         this.code = codeNumber;
         switch (this.code) {
             case 401:
@@ -27,16 +28,9 @@ class Exceptions {
                 this.message = "Unknown Error";
                 break;
         }
+        if (customMessage)
+            this.message = customMessage
     }
-
-    getCode() {
-        return this.code;
-    }
-
-    getMessage() {
-        return this.message;
-    }
-
 
 }
 

@@ -112,7 +112,7 @@ class PositionController {
 
 
         let positions = await this.getAllPositions()
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error })
 
         const positionIDs = positions.map(pos => String(pos.positionID));
 
@@ -162,7 +162,7 @@ class PositionController {
 
 
         let positions = await this.getAllPositions()
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error })
 
         const positionIDs = positions.map(pos => String(pos.positionID))
         if (!positionIDs.includes(oldId))

@@ -45,7 +45,7 @@ class ItemController {
         //check if the id is valid
         if (this.#controller.areUndefined(id, supplierId) || this.#controller.areNotNumbers(id, supplierId)
             || !this.#controller.areAllPositiveOrZero(id)) {
-            throw new Exceptions(422);
+            throw new Exceptions(422, "check");
 
         }
 
@@ -105,7 +105,7 @@ class ItemController {
 
         //check if sku exists in the SKU table
         await this.#controller.getSkuController().getSku(SKUId)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error })
 
         //check if the supplier already sells an item with the same SKUId
 
@@ -116,7 +116,7 @@ class ItemController {
         }
 
         item = await itemDao.getItem(id)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error })
         if (item !== undefined) {
             throw new Exceptions(422);
         }
@@ -148,7 +148,7 @@ class ItemController {
             throw new Exceptions(422);
 
         await this.getItem(id, supplierId)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error })
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error })
 
         const suppliers = await this.#controller.getUserController().getAllSuppliers()
             .catch(err => { throw err })

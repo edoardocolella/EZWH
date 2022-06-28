@@ -162,7 +162,7 @@ class SkuController {
             throw new Exceptions(401);
 
         let sku = await this.getSku(id)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         let editParams = { "newDescription": "description", "newWeight": "weight", "newVolume": "volume", "newNotes": "notes", "newPrice": "price", "newAvailableQuantity": "availableQuantity" };
         //If a param in the body is not present, the one relative to the old sku state is taken
@@ -227,7 +227,7 @@ class SkuController {
 
         //search sku
         let sku = await this.getSku(id)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         //search position
         let position = await positionDAO.getPosition(positionId)

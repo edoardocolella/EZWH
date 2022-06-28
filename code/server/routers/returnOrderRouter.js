@@ -9,8 +9,8 @@ const controller = Singleton.getInstance()
 router.get('/api/returnOrders', async (req, res) => {
 
     await controller.getReturnOrderController().getAllReturnOrders()
-    .then((returnOrders) => { return res.status(200).json(returnOrders); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+        .then(returnOrders => res.status(200).json(returnOrders))
+        .catch(error => res.status(error.code).send(error.message));
 });
 
 
@@ -18,25 +18,25 @@ router.get('/api/returnOrders/:id', async (req, res) => {
     const param = req.params.id;
 
     await controller.getReturnOrderController().getReturnOrder(param)
-    .then((returnOrder) => { return res.status(200).json(returnOrder); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+        .then(returnOrder => res.status(200).json(returnOrder))
+        .catch(error => res.status(error.code).send(error.message));
 });
 
 
 
 router.post('/api/returnOrder', async (req, res) => {
-    
+
     await controller.getReturnOrderController().createReturnOrder(req.body)
-    .then(() => { return res.status(201).end(); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+        .then(() => res.status(201).end())
+        .catch(error => res.status(error.code).send(error.message));
 });
 
 router.delete('/api/returnOrder/:id', async (req, res) => {
     const param = req.params.id;
-   
+
     await controller.getReturnOrderController().deleteReturnOrder(param)
-    .then(() => { return res.status(204).end(); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+        .then(() => res.status(204).end())
+        .catch(error => res.status(error.code).send(error.message));
 });
 
 

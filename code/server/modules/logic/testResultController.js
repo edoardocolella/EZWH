@@ -98,11 +98,11 @@ class TestResultController {
 
         //check if skuitem exists
         await this.#controller.getSkuItemController().getSkuItem(rfid)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         //check if test descriptor exists
         await this.#controller.getTestDescriptorController().getTestDescriptor(idTestDescriptor)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         await testResultDAO.createTestResult(idTestDescriptor, rfid, dateToSave, result)
             .catch(error => { throw error });
@@ -140,15 +140,15 @@ class TestResultController {
 
         //check if skuitem exists
         await this.#controller.getSkuItemController().getSkuItem(rfid)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         //check if testdescriptor exists
         await this.#controller.getTestDescriptorController().getTestDescriptor(newIdTestDescriptor)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         //check if testresult exists
         await this.getTestResult(rfid, id)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         await testResultDAO.editTestResult(newIdTestDescriptor, dateToSave, newResult, id, rfid)
             .catch(error => { throw error });

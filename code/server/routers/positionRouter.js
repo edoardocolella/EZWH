@@ -10,8 +10,8 @@ const controller = Singleton.getInstance()
 router.get('/api/positions', async(req, res) => {
   
   await controller.getPositionController().getAllPositions()
-    .then((positions) => { return res.status(200).json(positions); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+    .then(positions =>  res.status(200).json(positions))
+    .catch(error =>  res.status(error.code).send(error.message));
 
 });
 
@@ -19,8 +19,8 @@ router.get('/api/positions', async(req, res) => {
 router.post('/api/position', async (req, res) => {
 
   await controller.getPositionController().createPosition(req.body)
-    .then(() => { return res.status(201).end(); })
-    .catch(error => {return res.status(error.getCode()).send(error.getMessage()); });
+    .then(() =>  res.status(201).end())
+    .catch(error =>  res.status(error.code).send(error.message));
 
 });
 
@@ -29,8 +29,8 @@ router.put('/api/position/:positionID', async (req, res) => {
   const param = req.params.positionID;
 
   await controller.getPositionController().editPositionVer1(param, req.body)
-    .then(() => { return res.status(200).end(); })
-    .catch(error => { console.log(error); return res.status(error.getCode()).send(error.getMessage()); });
+    .then(() =>  res.status(200).end())
+    .catch(error =>  res.status(error.code).send(error.message));
 
 });
 
@@ -39,8 +39,8 @@ router.put('/api/position/:positionID/changeID', async (req, res) => {
   const param = req.params.positionID;
 
   await controller.getPositionController().editPositionVer2(param, req.body)
-    .then(() => { return res.status(200).end(); })
-    .catch(error => {return res.status(error.getCode()).send(error.getMessage()); });
+    .then(() =>  res.status(200).end())
+    .catch(error =>  res.status(error.code).send(error.message));
 
 });
 
@@ -49,8 +49,8 @@ router.delete('/api/position/:positionID', async (req, res) => {
   const param = req.params.positionID;
 
   await controller.getPositionController().deletePosition(param)
-    .then((user) => { return res.status(204).end(); })
-    .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
+    .then(() =>  res.status(204).end())
+    .catch(error =>  res.status(error.code).send(error.message));
 });
 
 module.exports = router;

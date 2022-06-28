@@ -18,7 +18,7 @@ const skuItemsRouter = require('./routers/skuItemsRouter');
 const skusRouter = require('./routers/skusRouter');
 const testRouter = require("./routers/testsRouter");
 const userRouter = require("./routers/userRouter");
-
+const morgan = require('morgan')
 
 //Controller
 //const controller = new Controller();
@@ -26,6 +26,7 @@ const userRouter = require("./routers/userRouter");
 const controller = Singleton.getInstance();
 
 app.use(express.json());
+app.use(morgan('dev'))
 app.set('controller', controller);
 app.use('/', internalOrderRouter);
 app.use('/', itemRouter);

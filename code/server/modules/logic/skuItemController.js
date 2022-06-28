@@ -115,7 +115,7 @@ class SkuItemController {
 
         //check if sku exists
         await this.#controller.getSkuController().getSku(SKUId)
-            .catch((error) => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch((error) => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         await skuItemDAO.createSkuItem(RFID, SKUId, 0, formattedDate)
             .catch((error) => { throw error });
@@ -153,7 +153,7 @@ class SkuItemController {
 
         //check if skuitem exists
         await this.getSkuItem(oldRFID)
-            .catch(error => { if (error.getCode() === 500) throw new Exceptions(503); else throw error });
+            .catch(error => { if (error.code === 500) throw new Exceptions(503); else throw error });
 
         await skuItemDAO.editSkuItem(newRFID, newAvailable, formattedDate, oldRFID)
             .catch(error => { throw error });

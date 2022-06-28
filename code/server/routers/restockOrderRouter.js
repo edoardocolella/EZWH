@@ -1,13 +1,11 @@
 const express = require('express')
 const router = express.Router()
 const Controller = require('../modules/logic/controller')
-//Restock Order Requests
-
+const Singleton = require('../modules/logic/controllerSingleton');
+/** @type {Controller} */
+const controller = Singleton.getInstance()
 
 router.get('/api/restockOrders', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getRestockOrderController().getAllRestockOrders()
     .then((restockOrders) => { return res.status(200).json(restockOrders); })
@@ -17,9 +15,6 @@ router.get('/api/restockOrders', async (req, res) => {
 router.get('/api/restockOrders/:id', async (req, res) => {
   const param = req.params.id;
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getRestockOrderController().getRestockOrder(param)
     .then((restockOrder) => { return res.status(200).json(restockOrder); })
     .catch(error => {return res.status(501).send(); });
@@ -27,9 +22,6 @@ router.get('/api/restockOrders/:id', async (req, res) => {
 
 router.get('/api/restockOrders/:id/returnItems', async (req, res) => {
   const param = req.params.id;
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getRestockOrderController().getRestockOrderToBeReturned(param)
     .then((user) => { return res.status(200).json(user); })
@@ -39,9 +31,6 @@ router.get('/api/restockOrders/:id/returnItems', async (req, res) => {
 
 router.get('/api/restockOrdersIssued', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getRestockOrderController().getIssuedRestockOrders()
     .then((restockOrder) => { return res.status(200).json(restockOrder); })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -49,9 +38,6 @@ router.get('/api/restockOrdersIssued', async (req, res) => {
 
 
 router.post('/api/restockOrder', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getRestockOrderController().createRestockOrder(req.body)
     .then((user) => { return res.status(201).end(); })
@@ -61,9 +47,6 @@ router.post('/api/restockOrder', async (req, res) => {
 router.put('/api/restockOrder/:id', async (req, res) => {
   const param = req.params.id
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getRestockOrderController().editRestockOrder(param, req.body)
     .then(() => { return res.status(200).end(); })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -71,9 +54,6 @@ router.put('/api/restockOrder/:id', async (req, res) => {
 
 router.put('/api/restockOrder/:id/skuItems', async (req, res) => {
   const param = req.params.id;
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getRestockOrderController().addSkuItemsToRestockOrder(param, req.body)
   .then(() => { return res.status(200).end(); })
@@ -84,9 +64,6 @@ router.put('/api/restockOrder/:id/skuItems', async (req, res) => {
 router.put('/api/restockOrder/:id/transportNote', async (req, res) => {
   const param = req.params.id;
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getRestockOrderController().addTransportNote(param, req.body)
     .then(() => { return res.status(200).end(); })
     .catch(error => {return res.status(error.getCode()).send(error.getMessage()); });
@@ -95,9 +72,6 @@ router.put('/api/restockOrder/:id/transportNote', async (req, res) => {
 
 router.delete('/api/restockOrder/:id', async (req, res) => {
   const param = req.params.id;
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getRestockOrderController().deleteRestockOrder(param)
     .then(() => { return res.status(204).end(); })

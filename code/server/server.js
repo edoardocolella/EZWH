@@ -2,7 +2,8 @@
 
 
 const express = require('express');
-const Controller = require('./modules/logic/controller')
+const Singleton = require('./modules/logic/controllerSingleton')
+
 // init express
 const app = new express();
 const port = 3001;
@@ -20,7 +21,9 @@ const userRouter = require("./routers/userRouter");
 
 
 //Controller
-const controller = new Controller();
+//const controller = new Controller();
+
+const controller = Singleton.getInstance();
 
 app.use(express.json());
 app.set('controller', controller);

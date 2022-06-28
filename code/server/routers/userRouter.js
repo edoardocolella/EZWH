@@ -1,14 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const Controller = require('../modules/logic/controller')
-
+const Singleton = require('../modules/logic/controllerSingleton');
+/** @type {Controller} */
+const controller = Singleton.getInstance()
 //USER
 //GET /api/userinfo
 router.get('/api/userinfo', async (req, res) => {
-
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   let user;
   try {
@@ -23,9 +21,6 @@ router.get('/api/userinfo', async (req, res) => {
 //GET /api/suppliers
 router.get('/api/suppliers', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().getAllSuppliers()
     .then((suppliers) => { return res.status(200).json(suppliers); })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -33,9 +28,6 @@ router.get('/api/suppliers', async (req, res) => {
 
 //GET /api/users
 router.get('/api/users', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getUserController().getAllUsers()
     .then((users) => { return res.status(200).json(users); })
@@ -46,9 +38,6 @@ router.get('/api/users', async (req, res) => {
 //POST /api/newUser
 router.post('/api/newUser', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().createUser(req.body)
     .then(() => { return res.status(201).end() })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -56,9 +45,6 @@ router.post('/api/newUser', async (req, res) => {
 
 //POST /api/managerSessions
 router.post('/api/managerSessions', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getUserController().login(req.body, "manager")
     .then((value) => { return res.status(200).json(value) })
@@ -68,9 +54,6 @@ router.post('/api/managerSessions', async (req, res) => {
 //POST /api/customerSessions
 router.post('/api/customerSessions', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().login(req.body, "customer")
     .then(() => { return res.status(200).end() })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -78,9 +61,6 @@ router.post('/api/customerSessions', async (req, res) => {
 
 //POST /api/supplierSessions
 router.post('/api/supplierSessions', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getUserController().login(req.body, "supplier")
     .then(() => { return res.status(200).end() })
@@ -90,9 +70,6 @@ router.post('/api/supplierSessions', async (req, res) => {
 //POST /api/clerkSessions
 router.post('/api/clerkSessions', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().login(req.body, "clerk")
     .then(() => { return res.status(200).end() })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -100,9 +77,6 @@ router.post('/api/clerkSessions', async (req, res) => {
 
 //POST /api/qualityyEmployeeSessions
 router.post('/api/qualityEmployeeSessions', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getUserController().login(req.body, "qualityEmployee")
     .then(() => { return res.status(200).end() })
@@ -112,9 +86,6 @@ router.post('/api/qualityEmployeeSessions', async (req, res) => {
 //POST /api/deliveryEmployeeSessions
 router.post('/api/deliveryEmployeeSessions', async (req, res) => {
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().login(req.body, "deliveryEmployee")
     .then(() => { return res.status(200).end() })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -122,9 +93,6 @@ router.post('/api/deliveryEmployeeSessions', async (req, res) => {
 
 //POST /api/logout
 router.post('/api/logout', async (req, res) => {
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   try {
     controller.getUserController().logout()
@@ -140,9 +108,6 @@ router.post('/api/logout', async (req, res) => {
 router.put('/api/users/:username', async (req, res) => {
   const param = req.params.username;
 
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
-
   await controller.getUserController().editUser(param, req.body)
     .then(() => { return res.status(200).end() })
     .catch(error => { return res.status(error.getCode()).send(error.getMessage()); });
@@ -152,9 +117,6 @@ router.put('/api/users/:username', async (req, res) => {
 router.delete('/api/users/:username/:type', async (req, res) => {
   const paramUsername = req.params.username;
   const paramType = req.params.type;
-
-  /** @type {Controller} */
-  const controller = req.app.get("controller");
 
   await controller.getUserController().deleteUser(paramUsername, paramType)
     .then(() => { return res.status(204).end() })
